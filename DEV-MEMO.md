@@ -249,17 +249,25 @@
 | 対象 | branch（`refs/heads/main` を include） |
 | enforcement | `active` |
 | ルール | `pull_request` / `non_fast_forward` / `deletion` |
+| bypass | RepositoryRole: admin（`bypass_mode: always`） |
 
 - `pull_request`: **マージに PR を必須化**。`required_approving_review_count: 0`（solo 運用のためレビュー人数は要求しない）
 - `non_fast_forward`: **force push を拒否**（`--force` や rebase push による履歴書き換えを禁止）
 - `deletion`: **ブランチの削除を拒否**
+- `bypass_actors`: **RepositoryRole admin（actor_id: 2）** を `always` で bypass。これが無いと**オーナー自身の直接 push もブロックされる**（実測で確認）
 
 作成コマンド（再現用）:
 
 ```bash
 gh api --method POST repos/watanabe3tipapa/issues-astro-cms/rulesets \
   --input /path/to/ruleset-main.json
+
+# bypass 追加（※ PATCH は 404 を返したため PUT で更新した）
+gh api --method PUT repos/watanabe3tipapa/issues-astro-cms/rulesets/20182162 \
+  --input /path/to/ruleset-bypass.json
 ```
+
+作成時ボディ:
 
 ```json
 {
@@ -289,6 +297,22 @@ gh api --method POST repos/watanabe3tipapa/issues-astro-cms/rulesets \
 }
 ```
 
+bypass 追加時のボディ:
+
+```json
+{
+  "bypass_actors": [
+    { "actor_id": 2, "actor_type": "RepositoryRole", "bypass_mode": "always" }
+  ]
+}
+```
+
+### 9.2.1 実測で判明した注意点
+
+- **API で ruleset を作成しただけでは owner も直接 push できない。** `pull_request` ルールは bypass_actors の指定が無い限り**リポジトリオーナーにも適用**される。実際、作成直後の push が `push declined due to repository rule violations` で拒否された。
+- admin bypass（`actor_id: 2`）を `bypass_mode: always` で追加したところ、owner の直接 push は `Bypassed rule violations` として通り、外部からの PR フローはそのまま維持される。
+- **更新 API は `PATCH` ではなく `PUT` を使う必要があった。** `PATCH` は存在する ruleset に対しても 404 を返した（gh api / curl どちらも）。`PUT` なら成功する。
+
 ### 9.3 あえて「status checks」を入れなかった理由（重要）
 
 `Require status checks to pass before merging` を追加しなかったのは、以下の理由による。
@@ -299,7 +323,7 @@ gh api --method POST repos/watanabe3tipapa/issues-astro-cms/rulesets \
 
 ### 9.4 影響と運用上の注意
 
-- **リポジトリオーナーは admin bypass**（デフォルト）で引き続き main へ直接 push できる。既存の自分運用（main 直 push）は変わらない。
+- **リポジトリオーナーは admin bypass**（`bypass_actors` で明示設定）で引き続き main へ直接 push できる。既存の自分運用（main 直 push）は変わらない。※ bypass 未設定だと owner もブロックされる（§9.2.1）
 - 外部コントリビューターは **PR 経由のみ** で main に変更が入る。
 - `labels.yml`（Issue ラベル操作）と `dependabot.yml`（**PR を作成する**のでむしろ整合）は影響なし。
 - ブランチ名は `main`（git init -b main で初期化済み）。ruleset の include も `refs/heads/main` で固定している。
