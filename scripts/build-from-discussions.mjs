@@ -16,7 +16,7 @@ if (!owner || !repo) throw new Error("Invalid REPO. Expected owner/name.");
 const QUERY = `
   query($owner: String!, $repo: String!, $cursor: String) {
     repository(owner: $owner, name: $repo) {
-      discussions(first: 100, after: $cursor, labels: ["status:published"]) {
+      discussions(first: 100, after: $cursor) {
         pageInfo {
           hasNextPage
           endCursor
@@ -24,13 +24,22 @@ const QUERY = `
         nodes {
           number
           body
+          labels(first: 20) {
+            nodes {
+              name
+            }
+          }
         }
       }
     }
   }
 `;
 
-async function fetchPublishedDiscussions() {
+function isPublished(discussion) {
+  return (discussion.labels?.nodes ?? []).some((label) => label.name === "status:published");
+}
+
+async function fetchDiscussions() {
   const all = [];
   let cursor = null;
   let hasNextPage = true;
@@ -38,6 +47,7 @@ async function fetchPublishedDiscussions() {
   while (hasNextPage) {
     const data = await ghGraphql(QUERY, { owner, repo, cursor }, token);
     const discussions = data.data.repository.discussions;
+    if (!discussions) throw new Error("Discussions is not enabled on this repository.");
     all.push(...(discussions.nodes || []));
     hasNextPage = discussions.pageInfo.hasNextPage;
     cursor = discussions.pageInfo.endCursor;
@@ -47,7 +57,8 @@ async function fetchPublishedDiscussions() {
 }
 
 async function main() {
-  const discussions = await fetchPublishedDiscussions();
+  const all = await fetchDiscussions();
+  const discussions = all.filter(isPublished);
 
   cleanPostsDir();
 

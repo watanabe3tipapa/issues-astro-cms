@@ -13,11 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create label status:draft
-        run: gh label create "status:draft" --color "0E8A16" --description "下書き（非公開）" --force
+        run: gh label create "status:draft" --repo "${{ github.repository }}" --color "0E8A16" --description "下書き（非公開）" --force
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create label status:published
-        run: gh label create "status:published" --color "1F6FEB" --description "公開済み" --force
+        run: gh label create "status:published" --repo "${{ github.repository }}" --color "1F6FEB" --description "公開済み" --force
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
