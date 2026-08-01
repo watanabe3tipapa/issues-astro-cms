@@ -165,6 +165,7 @@
 | 2026-08-01 | **GitHub Actions 実動作の検証**: 3 workflow すべて成功（ラベル自動作成・Issues ビルド・Discussions ビルド・Pages デプロイ） |
 | 2026-08-01 | **デモ記事を公開**: サンプル記事を `status:published` 付き Issue（#7〜#12）として作成し公開。チュートリアル記事（`tutorial-first-post`）を追加 |
 | 2026-08-01 | **UI/UX 刷新**: 全体を **neo brutalism 基調**にリスタイル（commit 44cf4e2） |
+| 2026-08-01 | **main ブランチ保護**: ruleset `main protection`（PR 必須 + force push 拒否 + 削除拒否）を作成。詳細は §9 |
 
 ### サンプル記事一覧
 
@@ -222,3 +223,92 @@
 
 - ローカル: `npm run dev` / `npm run build`
 - Actions: GitHub 側での実行が必要（ローカルでは `node --check` と YAML パースによる構文検証のみ）
+
+---
+
+## 9. トピック: main ブランチの保護（branch protection ruleset）
+
+> パブリックテンプレート化を進める中で GitHub から「Your main branch isn't protected」のバナーが出た。この判断は本リポジトリの運用方針に直結するため、トピックとして詳細を残す。
+
+### 9.1 背景と判断の流れ
+
+- 現状、リポジトリは「パブリック + テンプレート」であり、`CONTRIBUTING.md` が**フォーク → feature ブランチ → PR** の貢献フローを明記している。
+- GitHub が main の無保護を通知（`Your main branch isn't protected`）。この時点で**有効化する**と判断した。
+- 理由は以下の通り。
+  1. ガバナンスとの整合: CONTRIBUTING.md が PR フロー前提なのに、main が誰でも push できるのは矛盾している。
+  2. デプロイとの非依存: 本テンプレートの公開フローは「Issue / Discussion → GitHub Actions → Pages」であり、**main への直接 push には依存していない**。したがって保護を導入しても運用は壊れない。
+  3. 誤操作の防止: 公開テンプレートでは force push やブランチ削除による事故が最も怖い。これをルールで止められる。
+
+### 9.2 実施した設定（2026-08-01）
+
+リポジトリルールセット（branch ruleset）を作成した。
+
+| 項目 | 値 |
+|---|---|
+| 名前 | `main protection` |
+| 対象 | branch（`refs/heads/main` を include） |
+| enforcement | `active` |
+| ルール | `pull_request` / `non_fast_forward` / `deletion` |
+
+- `pull_request`: **マージに PR を必須化**。`required_approving_review_count: 0`（solo 運用のためレビュー人数は要求しない）
+- `non_fast_forward`: **force push を拒否**（`--force` や rebase push による履歴書き換えを禁止）
+- `deletion`: **ブランチの削除を拒否**
+
+作成コマンド（再現用）:
+
+```bash
+gh api --method POST repos/watanabe3tipapa/issues-astro-cms/rulesets \
+  --input /path/to/ruleset-main.json
+```
+
+```json
+{
+  "name": "main protection",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["refs/heads/main"],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 0,
+        "dismiss_stale_reviews_on_push": false,
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": false
+      }
+    },
+    { "type": "non_fast_forward" },
+    { "type": "deletion" }
+  ]
+}
+```
+
+### 9.3 あえて「status checks」を入れなかった理由（重要）
+
+`Require status checks to pass before merging` を追加しなかったのは、以下の理由による。
+
+- **fork からの PR では `deploy` ジョブが必ず失敗する。** fork の workflow は `pages: write` / `id-token: write` を持てないため、`actions/deploy-pages` が失敗する。Build Blog workflow を required status check にすると、**外部コントリビューションが永遠にマージできなくなる**。
+- 仮に入れるなら **`build` ジョブのみ**を対象にする（`deploy` ジョブを除外）。ただしジョブ単位の required check は運用が煩雑になりがちで、現時点では過剰。
+- そもそも required status check は **PR マージ時にのみ**効き、**直接 push を止めるものではない**。直接 push の抑止を狙うなら `pull_request` ルールこそが実効的な手段であり、それは導入済み。
+
+### 9.4 影響と運用上の注意
+
+- **リポジトリオーナーは admin bypass**（デフォルト）で引き続き main へ直接 push できる。既存の自分運用（main 直 push）は変わらない。
+- 外部コントリビューターは **PR 経由のみ** で main に変更が入る。
+- `labels.yml`（Issue ラベル操作）と `dependabot.yml`（**PR を作成する**のでむしろ整合）は影響なし。
+- ブランチ名は `main`（git init -b main で初期化済み）。ruleset の include も `refs/heads/main` で固定している。
+
+### 9.5 将来の拡張候補
+
+- 必要になったら `build` ジョブのみを対象にした required status check を追加（その際は deploy ジョブ除外の理由を忘れない）
+- Code owners レビュー / マージ前の会話解決（conversation resolution）の要求
+- タグや release ブランチの保護、`workflow` パーミッションの制限強化
+- このテンプレートを利用する側への指針として、README に「推奨 branch protection 設定」を追記する余地がある
+
+---
