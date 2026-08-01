@@ -185,6 +185,7 @@
 - Pages 公開: https://watanabe3tipapa.github.io/issues-astro-cms/ が HTTP 200 で配信
 - 注意: 両ビルド workflow は同一 concurrency グループ `pages` を持つため、同時 push 時は片方がキャンセルされる（意図的な相互排他）。実際に使う workflow だけを有効化する
 - 注意: 公開済み Issue/Discussion が 0 件の間は「デモ記事」一覧が空になる。サンプル記事はローカル用の初期データであり、CI では全消去→再生成されるため
+- 実地発見の落とし穴: frontmatter の値に `: `（コロン+スペース）を含むと YAML パースに失敗（例: `title: チュートリアル: 公開手順`）。ISSUE_TEMPLATE に「二重引用符で囲む」旨を追記済み
 
 ---
 
