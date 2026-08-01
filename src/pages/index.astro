@@ -1,0 +1,240 @@
+---
+import Base from "../layouts/Base.astro";
+import { getCollection } from "astro:content";
+
+const posts = (await getCollection("posts"))
+  .sort((a, b) => b.data.publishedAt.localeCompare(a.data.publishedAt))
+  .map((p) => {
+    const slug = p.id.replace(/\.md$/, "");
+    return {
+      slug,
+      title: p.data.title,
+      publishedAt: p.data.publishedAt,
+      tags: p.data.tags,
+      excerpt: p.data.excerpt ?? p.body.slice(0, 140).replace(/\s+/g, " ").trim(),
+      href: `/posts/${slug}/`,
+    };
+  });
+
+const base = import.meta.env.BASE_URL;
+---
+
+<Base title="GitHub を CMS にした Astro ブログ">
+  <style>
+    .hero {
+      text-align: center;
+      padding: 3rem 0 2.5rem;
+    }
+
+    .hero h1 {
+      font-size: 2.1rem;
+      margin: 0 0 0.75rem;
+    }
+
+    .hero p {
+      color: var(--text-muted);
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    .badges {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 1.25rem;
+    }
+
+    .badge {
+      background: var(--accent-soft);
+      color: #082f49;
+      font-weight: 700;
+      font-size: 0.8rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+    }
+
+    .section {
+      margin: 2.5rem 0;
+    }
+
+    .section h2 {
+      font-size: 1.4rem;
+      border-left: 4px solid var(--accent);
+      padding-left: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .roles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .role {
+      background: var(--bg-soft);
+      border: 1px solid var(--card);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+    }
+
+    .role .emoji {
+      font-size: 1.6rem;
+    }
+
+    .role h3 {
+      margin: 0.5rem 0 0.25rem;
+    }
+
+    .role p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .flow {
+      text-align: center;
+      font-weight: 700;
+      margin-top: 1rem;
+      color: var(--accent);
+    }
+
+    .steps {
+      counter-reset: step;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .steps li {
+      counter-increment: step;
+      position: relative;
+      padding: 0.25rem 0 0.25rem 2.4rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0.35rem;
+      width: 1.7rem;
+      height: 1.7rem;
+      background: var(--accent-soft);
+      color: #082f49;
+      font-weight: 700;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    .post-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      padding: 0;
+      list-style: none;
+    }
+
+    .post-card {
+      background: var(--bg-soft);
+      border: 1px solid var(--card);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .post-card .meta {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .post-card .title {
+      font-size: 1.1rem;
+      color: var(--text);
+    }
+
+    .post-card .excerpt {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    .post-card .more {
+      margin-top: auto;
+      font-size: 0.9rem;
+    }
+  </style>
+
+  <section class="hero">
+    <h1>GitHub Issues / Discussions を CMS にしたブログ</h1>
+    <p>
+      GitHub の Issue や Discussion を「原稿」として書き、GitHub Actions が自動で Astro
+      ブログを生成し、GitHub Pages で公開します。無料・自動化・GitHub 内完結のブログ CMS です。
+    </p>
+    <div class="badges">
+      <span class="badge">GitHub Issues</span>
+      <span class="badge">GitHub Discussions</span>
+      <span class="badge">Astro</span>
+      <span class="badge">GitHub Actions</span>
+      <span class="badge">GitHub Pages</span>
+      <span class="badge">無料</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>アーキテクチャ</h2>
+    <div class="roles">
+      <div class="role">
+        <div class="emoji">📝</div>
+        <h3>原稿</h3>
+        <p>GitHub Issues / Discussions に記事を書きます。公開はラベル status:published で制御。</p>
+      </div>
+      <div class="role">
+        <div class="emoji">🏭</div>
+        <h3>工場</h3>
+        <p>GitHub Actions が公開ラベルの記事を API で取得し、Astro 用 Markdown を生成。</p>
+      </div>
+      <div class="role">
+        <div class="emoji">🛍️</div>
+        <h3>店頭</h3>
+        <p>Astro が一覧・個別ページを静的生成し、GitHub Pages にデプロイ。</p>
+      </div>
+    </div>
+    <p class="flow">書く → ラベルで公開 → 自動ビルド → Pages で公開</p>
+  </section>
+
+  <section class="section">
+    <h2>Quickstart</h2>
+    <ol class="steps">
+      <li>「Use this template」でリポジトリを作成し、<code>astro.config.mjs</code> の <code>site</code> を変更。</li>
+      <li>Settings &gt; Pages の Source を <b>GitHub Actions</b> に変更。</li>
+      <li>ラベル <code>status:draft</code> / <code>status:published</code> を作成。</li>
+      <li>（Discussions 版の場合）Discussions を有効化し <code>blog</code> カテゴリを用意。</li>
+      <li><code>status:published</code> ラベルを付けた記事を投稿するだけで公開完了。</li>
+    </ol>
+  </section>
+
+  <section class="section">
+    <h2>デモ記事</h2>
+    <ul class="post-list">
+      {
+        posts.map((p) => (
+          <li class="post-card">
+            <div class="meta">
+              {p.publishedAt}
+              {p.tags.length ? ` · ${p.tags.join(", ")}` : ""}
+            </div>
+            <a class="title" href={`${base}posts/${p.slug}/`}>{p.title}</a>
+            <p class="excerpt">{p.excerpt}</p>
+            <a class="more" href={`${base}posts/${p.slug}/`}>読む →</a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</Base>

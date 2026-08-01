@@ -1,0 +1,90 @@
+---
+import Base from "../../layouts/Base.astro";
+import { getCollection, render } from "astro:content";
+import { GITHUB_DISCUSSIONS_BASE_URL } from "../../consts";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("posts");
+  return posts.map((p) => ({
+    params: { slug: p.id.replace(/\.md$/, "") },
+  }));
+}
+
+const { slug } = Astro.params;
+const all = await getCollection("posts");
+const post = all.find((p) => p.id.replace(/\.md$/, "") === slug);
+
+if (!post) {
+  throw new Error(`Post not found: ${slug}`);
+}
+
+const { Content } = await render(post);
+---
+
+<Base title={post.data.title} description={post.data.excerpt}>
+  <style>
+    .meta {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .tags {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    .tag {
+      background: var(--card);
+      border-radius: 999px;
+      padding: 0.2rem 0.7rem;
+      font-size: 0.8rem;
+      color: var(--text);
+    }
+
+    .comment-link {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-soft);
+      border: 1px solid var(--card);
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+    }
+
+    .back {
+      display: inline-block;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+  </style>
+
+  <a class="back" href={import.meta.env.BASE_URL}>← 一覧に戻る</a>
+  <h1>{post.data.title}</h1>
+  <div class="meta">{post.data.publishedAt}</div>
+  <div class="tags">
+    {
+      post.data.tags.map((t) => (
+        <span class="tag">#{t}</span>
+      ))
+    }
+  </div>
+
+  <article>
+    <Content />
+  </article>
+
+  {
+    post.data.discussionId ? (
+      <a
+        class="comment-link"
+        href={`${GITHUB_DISCUSSIONS_BASE_URL}/${post.data.discussionId}`}
+      >
+        この記事に GitHub でコメントする →
+      </a>
+    ) : null
+  }
+</Base>

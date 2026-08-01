@@ -1,0 +1,17 @@
+{
+  "name": "issues-astro-cms",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "GitHub Issues / Discussions を CMS にした Astro ブログ（GitHub Pages 公開）",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "astro": "^5.0.0",
+    "gray-matter": "^4.0.3"
+  }
+}
