@@ -13,6 +13,7 @@ const posts = (await getCollection("posts"))
       tags: p.data.tags,
       excerpt: p.data.excerpt ?? p.body.slice(0, 140).replace(/\s+/g, " ").trim(),
       href: `/posts/${slug}/`,
+      source: p.data.discussionId ? "discussions" : "issues",
     };
   });
 
@@ -241,6 +242,72 @@ const base = import.meta.env.BASE_URL;
       transform: translate(2px, 2px);
       box-shadow: 1px 1px 0 var(--border);
     }
+
+    .showcase-note {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin: -0.5rem 0 1.4rem;
+      display: flex;
+      gap: 1.1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .legend {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .legend .swatch {
+      width: 0.9rem;
+      height: 0.9rem;
+      border: 2px solid var(--border);
+    }
+
+    .swatch-issues {
+      background: var(--blue);
+    }
+
+    .swatch-discussions {
+      background: var(--pink);
+    }
+
+    .post-card.featured {
+      grid-column: 1 / -1;
+    }
+
+    .post-card .source {
+      display: inline-block;
+      align-self: flex-start;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border: 2px solid var(--border);
+      box-shadow: 2px 2px 0 var(--border);
+      padding: 0.1rem 0.5rem;
+    }
+
+    .source-issues {
+      background: var(--blue);
+    }
+
+    .source-discussions {
+      background: var(--pink);
+    }
+
+    .featured .title {
+      font-size: 1.35rem;
+    }
+
+    .featured .excerpt {
+      font-size: 1rem;
+    }
   </style>
 
   <section class="hero">
@@ -296,11 +363,19 @@ const base = import.meta.env.BASE_URL;
   </section>
 
   <section class="section">
-    <h2>デモ記事</h2>
+    <h2>Showcase（公開記事）</h2>
+    <div class="showcase-note">
+      <span class="legend"><span class="swatch swatch-issues"></span> GitHub Issues</span>
+      <span class="legend"><span class="swatch swatch-discussions"></span> GitHub Discussions</span>
+      <span>両方の入り口から投稿した記事が、1つのサイトに自動で集約されます。</span>
+    </div>
     <ul class="post-list">
       {
-        posts.map((p) => (
-          <li class="post-card">
+        posts.map((p, i) => (
+          <li class={i === 0 ? "post-card featured" : "post-card"}>
+            <span class={`source source-${p.source}`}>
+              {p.source === "discussions" ? "Discussions" : "Issues"}
+            </span>
             <div class="meta">
               {p.publishedAt}
               {p.tags.length ? ` · ${p.tags.join(", ")}` : ""}
