@@ -175,11 +175,16 @@
   - 一時リポジトリにコピーし `parsePost` → `writePost` → `astro build` を実行。生成 Markdown がそのままビルド可能なことを確認
   - `excerpt` 自動生成（本文冒頭 160 文字）も確認
 - YAML 検証: 全 workflow / dependabot / ISSUE_TEMPLATE / DISCUSSION_TEMPLATE のパース OK
+- 空 posts ディレクトリでのビルド: 失敗せず LP のみ生成（警告のみ。キャッシュ削除後のクリーン状態で確認）
 
-### 未検証（要 GitHub 側操作）
+### 検証済み（GitHub Actions 実動作）— 2026-08-01
 
-- GitHub Actions の実動作（ラベル自動作成・Issue/Discussion からのビルド・Pages デプロイ）
-- Discussions の GraphQL クエリの実環境での挙動
+- **Initialize Labels**: 成功。`status:draft` / `status:published` の自動作成を確認（`--repo` 指定が必要と判明）
+- **Build Blog (Issues -> Astro)**: 成功（build + deploy 両ジョブ）
+- **Build Blog (Discussions -> Astro)**: 成功（GraphQL の `labels` 引数除去 → クライアント側フィルタに修正して確認）
+- Pages 公開: https://watanabe3tipapa.github.io/issues-astro-cms/ が HTTP 200 で配信
+- 注意: 両ビルド workflow は同一 concurrency グループ `pages` を持つため、同時 push 時は片方がキャンセルされる（意図的な相互排他）。実際に使う workflow だけを有効化する
+- 注意: 公開済み Issue/Discussion が 0 件の間は「デモ記事」一覧が空になる。サンプル記事はローカル用の初期データであり、CI では全消去→再生成されるため
 
 ---
 
