@@ -88,6 +88,17 @@
 - **GitHub 相対リンク**: README / SECURITY のリンクは `../../issues` などの相対パスにし、フォーク後の URL 変更を不要にした。
 - **ラベル自動作成**: `labels.yml` が `status:draft` / `status:published` を push 時に冪等作成（`gh label create --force`、`issues: write` 権限が必要）。セットアップの手作業を減らした。
 
+### 2.8 UI / UX（neo brutalism 基調）
+
+- テーマの方針は **neo brutalism**（太い黒枠・直角・ハードシャドウ・ビビッドなフラットカラー）で統一。従来のダーク系「柔らかい」テーマから全面刷新。
+- デザイントークン（`Base.astro` の `:root`）:
+  - `--bg: #f7f4ec`（クリーム）/ `--ink: #111111`（濃墨）/ `--paper: #ffffff`
+  - `--yellow / --blue / --pink / --green / --purple` の5色をアクセントとしてローテーションで使用
+  - `--border: #111`（3px）と `--shadow: 5px 5px 0 #111`（ハードシャドウ）が骨格
+- 共通パターン: カード / バッジ / ボタンは「枠 + ハードシャドウ」で、hover 時に `translate` で押し込む動き（物理的なボタン感を演出）。
+- 記事本文（Markdown）も同様に角丸を廃し、表は黄色ヘッダー、コード / 画像 / 引用は枠 + シャドウ。
+- シンプルさを崩さないため、グリッドや配色の工夫はトークンと CSS 変数のみで完結（ライブラリ未導入）。
+
 ---
 
 ## 3. ディレクトリ構成（完全版）
@@ -151,16 +162,22 @@
 | 2026-08-01 | **パブリックテンプレート化**: LICENSE / SECURITY / CONTRIBUTING / CoC / labels.yml / dependabot / consts.ts を追加。YAML 検証 |
 | 2026-08-03 | サンプル記事追加: 「なぜ GitHub Issues を CMS にするのか」（`why-issues-cms.md`） |
 | 2026-08-04 | サンプル記事追加: 「GitHub Pages の利用制限・閾値まとめ」（`github-pages-limits.md`）。公式ドキュメントに基づき数値を確認 |
+| 2026-08-01 | **GitHub Actions 実動作の検証**: 3 workflow すべて成功（ラベル自動作成・Issues ビルド・Discussions ビルド・Pages デプロイ） |
+| 2026-08-01 | **デモ記事を公開**: サンプル記事を `status:published` 付き Issue（#7〜#12）として作成し公開。チュートリアル記事（`tutorial-first-post`）を追加 |
+| 2026-08-01 | **UI/UX 刷新**: 全体を **neo brutalism 基調**にリスタイル（commit 44cf4e2） |
 
 ### サンプル記事一覧
 
-| slug | 記事 | 公開日 |
-|---|---|---|
-| `getting-started` | セットアップ手順 | 2026-07-31 |
-| `architecture` | アーキテクチャ解説 | 2026-08-01 |
-| `issues-vs-discussions` | Issues 版と Discussions 版の使い分け | 2026-08-02 |
-| `why-issues-cms` | なぜ Issues を CMS にするのか | 2026-08-03 |
-| `github-pages-limits` | GitHub Pages の利用制限・閾値まとめ | 2026-08-04 |
+| slug | 記事 | 公開日 | Issue |
+|---|---|---|---|
+| `getting-started` | セットアップ手順 | 2026-07-31 | #7 |
+| `architecture` | アーキテクチャ解説 | 2026-08-01 | #8 |
+| `issues-vs-discussions` | Issues 版と Discussions 版の使い分け | 2026-08-02 | #9 |
+| `why-issues-cms` | なぜ Issues を CMS にするのか | 2026-08-03 | #10 |
+| `github-pages-limits` | GitHub Pages の利用制限・閾値まとめ | 2026-08-04 | #11 |
+| `tutorial-first-post` | チュートリアル: 最初の1記事を公開するまで | 2026-08-05 | #12 |
+
+> 本リポジトリのデモ記事は、サンプル Issue（`status:published` 付き）として GitHub 上にも公開してある。Actions がこれらを元に `src/content/posts/` を再生成する。
 
 ---
 
@@ -186,6 +203,8 @@
 - 注意: 両ビルド workflow は同一 concurrency グループ `pages` を持つため、同時 push 時は片方がキャンセルされる（意図的な相互排他）。実際に使う workflow だけを有効化する
 - 注意: 公開済み Issue/Discussion が 0 件の間は「デモ記事」一覧が空になる。サンプル記事はローカル用の初期データであり、CI では全消去→再生成されるため
 - 実地発見の落とし穴: frontmatter の値に `: `（コロン+スペース）を含むと YAML パースに失敗（例: `title: チュートリアル: 公開手順`）。ISSUE_TEMPLATE に「二重引用符で囲む」旨を追記済み
+- **デモ記事の公開確認**: `status:published` 付き Issue（#7〜#12）から全6記事が生成され、https://watanabe3tipapa.github.io/issues-astro-cms/ で公開中（個別ページ含め HTTP 200）
+- **UI 検証**: neo brutalism 刷新後も `npm run build` 成功（6ページ）→ push でデプロイまで確認済み
 
 ---
 
