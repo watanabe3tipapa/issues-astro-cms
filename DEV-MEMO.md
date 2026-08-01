@@ -174,6 +174,7 @@
 | 2026-08-01 | **空デプロイのインシデント対処**: Discussions workflow が空サイトを上書きしたため無効化し、Issues ビルドで記事を復旧 |
 | 2026-08-01 | **両対応（結合ビルド）を導入**: `build-both.yml` / `build-from-both.mjs` を新設。Discussions を有効化し、サンプル Discussion 2件（#13 / #14）を作成。単独 workflow 2つは無効化し、Issues 6 + Discussions 2 の全8記事を1サイトで公開 |
 | 2026-08-01 | `src/consts.ts` の `GITHUB_REPO` を本リポジトリの実値（`watanabe3tipapa/issues-astro-cms`）に設定。Discussions 記事の「コメントする」リンクが正しく生成されることを確認 |
+| 2026-08-01 | **LP に Showcase セクションを追加**: 公開記事一覧を「Showcase（公開記事）」に刷新。各記事にソースバッジ（Issues=青 / Discussions=ピンク）を表示し、最新記事はフィーチャー（全幅）表示。両対応モードを視覚的にアピール |
 
 ### サンプル記事一覧
 
