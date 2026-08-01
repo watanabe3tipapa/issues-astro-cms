@@ -23,42 +23,65 @@ const { Content } = await render(post);
 
 <Base title={post.data.title} description={post.data.excerpt}>
   <style>
-    .meta {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .tags {
-      display: flex;
-      gap: 0.4rem;
-      flex-wrap: wrap;
-      margin-bottom: 1.5rem;
-    }
-
-    .tag {
-      background: var(--card);
-      border-radius: 999px;
-      padding: 0.2rem 0.7rem;
-      font-size: 0.8rem;
-      color: var(--text);
-    }
-
-    .comment-link {
-      display: inline-block;
-      margin-top: 2rem;
-      padding: 0.5rem 1rem;
-      background: var(--bg-soft);
-      border: 1px solid var(--card);
-      border-radius: var(--radius);
-      font-size: 0.9rem;
-    }
-
     .back {
       display: inline-block;
       margin-bottom: 1.5rem;
       font-size: 0.9rem;
-      color: var(--text-muted);
+      border: 3px solid var(--border);
+      background: var(--paper);
+      box-shadow: 3px 3px 0 var(--border);
+      padding: 0.3rem 0.8rem;
+    }
+
+    .back:hover {
+      text-decoration: none;
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 var(--border);
+    }
+
+    h1 {
+      font-size: clamp(1.7rem, 4vw, 2.4rem);
+      margin: 0 0 0.5rem;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    .tags {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.75rem;
+    }
+
+    .tag {
+      border: 2px solid var(--border);
+      background: var(--green);
+      box-shadow: 2px 2px 0 var(--border);
+      padding: 0.15rem 0.6rem;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .comment-link {
+      display: inline-block;
+      margin-top: 2.25rem;
+      padding: 0.55rem 1rem;
+      background: var(--pink);
+      border: 3px solid var(--border);
+      box-shadow: 4px 4px 0 var(--border);
+      font-weight: 800;
+    }
+
+    .comment-link:hover {
+      text-decoration: none;
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0 var(--border);
     }
   </style>
 
