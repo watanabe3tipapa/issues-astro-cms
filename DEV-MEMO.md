@@ -166,6 +166,7 @@
 | 2026-08-01 | **デモ記事を公開**: サンプル記事を `status:published` 付き Issue（#7〜#12）として作成し公開。チュートリアル記事（`tutorial-first-post`）を追加 |
 | 2026-08-01 | **UI/UX 刷新**: 全体を **neo brutalism 基調**にリスタイル（commit 44cf4e2） |
 | 2026-08-01 | **main ブランチ保護**: ruleset `main protection`（PR 必須 + force push 拒否 + 削除拒否）を作成。詳細は §9 |
+| 2026-08-01 | **空デプロイのインシデント対処**: Discussions workflow が空サイトを上書きしたため無効化し、Issues ビルドで記事を復旧 |
 
 ### サンプル記事一覧
 
@@ -202,6 +203,7 @@
 - **Build Blog (Discussions -> Astro)**: 成功（GraphQL の `labels` 引数除去 → クライアント側フィルタに修正して確認）
 - Pages 公開: https://watanabe3tipapa.github.io/issues-astro-cms/ が HTTP 200 で配信
 - 注意: 両ビルド workflow は同一 concurrency グループ `pages` を持つため、同時 push 時は片方がキャンセルされる（意図的な相互排他）。実際に使う workflow だけを有効化する
+- **インシデント（2026-08-01）**: push の競合で **Discussions ビルドが勝ち、「0 posts from Discussions」の空サイトを上書きデプロイ**し、公開中のデモ記事が全消去された。対処として **本リポジトリでは `build-discussions.yml` を無効化**（`gh workflow disable`）し、Issues ビルドを再実行して6記事を復旧。→ 教訓: **Discussions 版を使わないリポジトリでは必ず Discussions workflow を無効化しておく**（§9 の ruleset 導入後も同様）
 - 注意: 公開済み Issue/Discussion が 0 件の間は「デモ記事」一覧が空になる。サンプル記事はローカル用の初期データであり、CI では全消去→再生成されるため
 - 実地発見の落とし穴: frontmatter の値に `: `（コロン+スペース）を含むと YAML パースに失敗（例: `title: チュートリアル: 公開手順`）。ISSUE_TEMPLATE に「二重引用符で囲む」旨を追記済み
 - **デモ記事の公開確認**: `status:published` 付き Issue（#7〜#12）から全6記事が生成され、https://watanabe3tipapa.github.io/issues-astro-cms/ で公開中（個別ページ含め HTTP 200）
