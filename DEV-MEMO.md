@@ -22,7 +22,7 @@
 
 | 項目 | 決定内容 |
 |---|---|
-| CMS ソース | **Issues 版 + Discussions 版の両対応**（workflow / スクリプトを分離） |
+| CMS ソース | **Issues 版 / Discussions 版 / 両対応** の3モード（結合ビルド `build-both` を追加し、両ソースの記事を1サイトに併載可能に） |
 | 画像の扱い | **URL 直接方式**（ドラッグ&ドロップで貼ると GitHub が絶対 URL 化。ダウンロード処理なし） |
 | v1 の機能 | **最小構成**（一覧 + 個別ページのみ。RSS / カテゴリ / プレビューは拡張候補） |
 | デプロイ先 | **Project Site**（`https://{user}.github.io/issues-astro-cms/`）→ `base: "/issues-astro-cms/"` |
@@ -80,7 +80,10 @@
 取得方式:
 
 - Issues 版: REST Search API `repo:{repo} label:"status:published" is:issue`（PR は除外）
-- Discussions 版: GraphQL `discussions(labels:["status:published"])`（cursor でページネーション）
+- Discussions 版: GraphQL `discussions` を全件取得 → `status:published` ラベルを JS 側でフィルタ（cursor でページネーション）
+- **結合版（`build-from-both.mjs`）**: 上記2つの取得を1つのスクリプトに統合。**slug の重複は後処理（Discussions）側をスキップ**して対処。`cleanPostsDir()` を一度だけ呼び、両ソースの記事をまとめて書き出す
+
+> 排他性の解消: 従来は「1 ソース = 1 ワークフロー」で、ビルドのたびに posts を全消去していたため両ソースの併載ができなかった（→ 空デプロイのインシデント、§6）。結合版は全消去 → 両ソース取得 → 一括書き出し とするため、同じサイトに Issues と Discussions の記事を同時に表示できる。
 
 ### 2.7 パブリックテンプレート化の設計
 
@@ -111,11 +114,13 @@
 │   ├── DISCUSSION_TEMPLATE/blog-post.md    # Discussions 用投稿フォーム
 │   ├── dependabot.yml                      # npm / github-actions の週次更新
 │   └── workflows/
-│       ├── build-issues.yml                # Issues → ビルド → Pages デプロイ
-│       ├── build-discussions.yml           # Discussions → ビルド → Pages デプロイ
+│       ├── build-both.yml                  # 両対応: Issues + Discussions をまとめてビルド・デプロイ
+│       ├── build-issues.yml                # Issues 版（本リポジトリでは無効化済み）
+│       ├── build-discussions.yml           # Discussions 版（本リポジトリでは無効化済み）
 │       └── labels.yml                      # ラベル自動作成
 ├── scripts/
 │   ├── lib/common.mjs                      # 共通処理（env, fetch, frontmatter 解析, 出力）
+│   ├── build-from-both.mjs                 # Issues + Discussions の結合ビルド（本リポジトリで使用）
 │   ├── build-from-issues.mjs               # REST Search API
 │   └── build-from-discussions.mjs          # GraphQL API（ページネーション対応）
 ├── src/
@@ -167,19 +172,22 @@
 | 2026-08-01 | **UI/UX 刷新**: 全体を **neo brutalism 基調**にリスタイル（commit 44cf4e2） |
 | 2026-08-01 | **main ブランチ保護**: ruleset `main protection`（PR 必須 + force push 拒否 + 削除拒否）を作成。詳細は §9 |
 | 2026-08-01 | **空デプロイのインシデント対処**: Discussions workflow が空サイトを上書きしたため無効化し、Issues ビルドで記事を復旧 |
+| 2026-08-01 | **両対応（結合ビルド）を導入**: `build-both.yml` / `build-from-both.mjs` を新設。Discussions を有効化し、サンプル Discussion 2件（#13 / #14）を作成。単独 workflow 2つは無効化し、Issues 6 + Discussions 2 の全8記事を1サイトで公開 |
 
 ### サンプル記事一覧
 
-| slug | 記事 | 公開日 | Issue |
+| slug | 記事 | 公開日 | ソース |
 |---|---|---|---|
-| `getting-started` | セットアップ手順 | 2026-07-31 | #7 |
-| `architecture` | アーキテクチャ解説 | 2026-08-01 | #8 |
-| `issues-vs-discussions` | Issues 版と Discussions 版の使い分け | 2026-08-02 | #9 |
-| `why-issues-cms` | なぜ Issues を CMS にするのか | 2026-08-03 | #10 |
-| `github-pages-limits` | GitHub Pages の利用制限・閾値まとめ | 2026-08-04 | #11 |
-| `tutorial-first-post` | チュートリアル: 最初の1記事を公開するまで | 2026-08-05 | #12 |
+| `getting-started` | セットアップ手順 | 2026-07-31 | Issue #7 |
+| `architecture` | アーキテクチャ解説 | 2026-08-01 | Issue #8 |
+| `issues-vs-discussions` | Issues 版と Discussions 版の使い分け | 2026-08-02 | Issue #9 |
+| `why-issues-cms` | なぜ Issues を CMS にするのか | 2026-08-03 | Issue #10 |
+| `github-pages-limits` | GitHub Pages の利用制限・閾値まとめ | 2026-08-04 | Issue #11 |
+| `tutorial-first-post` | チュートリアル: 最初の1記事を公開するまで | 2026-08-05 | Issue #12 |
+| `discussions-howto` | Discussions 版の使い方 | 2026-08-06 | Discussion #13 |
+| `readers-comments` | 読者のコメントを活用したブログ運用 | 2026-08-07 | Discussion #14 |
 
-> 本リポジトリのデモ記事は、サンプル Issue（`status:published` 付き）として GitHub 上にも公開してある。Actions がこれらを元に `src/content/posts/` を再生成する。
+> 本リポジトリのデモ記事は、サンプル Issue（`status:published` 付き）およびサンプル Discussion（同）として GitHub 上に公開してある。結合ビルド（`build-both.mjs`）がこれらを元に `src/content/posts/` を再生成する。
 
 ---
 
@@ -204,6 +212,7 @@
 - Pages 公開: https://watanabe3tipapa.github.io/issues-astro-cms/ が HTTP 200 で配信
 - 注意: 両ビルド workflow は同一 concurrency グループ `pages` を持つため、同時 push 時は片方がキャンセルされる（意図的な相互排他）。実際に使う workflow だけを有効化する
 - **インシデント（2026-08-01）**: push の競合で **Discussions ビルドが勝ち、「0 posts from Discussions」の空サイトを上書きデプロイ**し、公開中のデモ記事が全消去された。対処として **本リポジトリでは `build-discussions.yml` を無効化**（`gh workflow disable`）し、Issues ビルドを再実行して6記事を復旧。→ 教訓: **Discussions 版を使わないリポジトリでは必ず Discussions workflow を無効化しておく**（§9 の ruleset 導入後も同様）
+- **結合ビルド（両対応）の検証**: `build-from-both.mjs` をローカル実行し Issues 6 + Discussions 2 = 8記事の生成を確認。`astro build` は 9 ページ（LP + 8記事）で成功。単独 workflow（build-issues / build-discussions）は無効化し、`build-both.yml` に一本化
 - 注意: 公開済み Issue/Discussion が 0 件の間は「デモ記事」一覧が空になる。サンプル記事はローカル用の初期データであり、CI では全消去→再生成されるため
 - 実地発見の落とし穴: frontmatter の値に `: `（コロン+スペース）を含むと YAML パースに失敗（例: `title: チュートリアル: 公開手順`）。ISSUE_TEMPLATE に「二重引用符で囲む」旨を追記済み
 - **デモ記事の公開確認**: `status:published` 付き Issue（#7〜#12）から全6記事が生成され、https://watanabe3tipapa.github.io/issues-astro-cms/ で公開中（個別ページ含め HTTP 200）

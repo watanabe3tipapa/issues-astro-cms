@@ -58,11 +58,13 @@ Issue / Discussion を書く
 │   ├── ISSUE_TEMPLATE/blog-post.md        # Issues 用の投稿フォーム
 │   ├── DISCUSSION_TEMPLATE/blog-post.md   # Discussions 用の投稿フォーム
 │   └── workflows/
-│       ├── build-issues.yml               # Issues 版のビルド・デプロイ
-│       ├── build-discussions.yml          # Discussions 版のビルド・デプロイ
+│       ├── build-both.yml                  # 両対応: Issues + Discussions をまとめてビルド・デプロイ
+│       ├── build-issues.yml                # Issues 版のビルド・デプロイ
+│       ├── build-discussions.yml           # Discussions 版のビルド・デプロイ
 │       └── labels.yml                     # status:published / status:draft ラベルを自動作成
 ├── scripts/
 │   ├── lib/common.mjs                     # 共通処理（API / frontmatter解析 / 出力）
+│   ├── build-from-both.mjs                # Issues + Discussions → Astro 用 Markdown
 │   ├── build-from-issues.mjs              # Issues → Astro 用 Markdown
 │   └── build-from-discussions.mjs         # Discussions → Astro 用 Markdown
 ├── src/
@@ -196,17 +198,21 @@ Issue / Discussion の本文に画像を**ドラッグ&ドロップ**で貼っ�
 
 ## Issues 版と Discussions 版
 
-`.github/workflows/` には2つのワークフローがあります。使う方だけ残してください。
+`.github/workflows/` にはビルドワークフローが3つあります。**使うモードに応じて1つだけ有効に**してください（複数有効にすると互いに競合します）。
 
-| ワークフロー | スクリプト | 特徴 |
-|---|---|---|
-| `build-issues.yml` | `build-from-issues.mjs` | REST API。開発者向け・シンプル |
-| `build-discussions.yml` | `build-from-discussions.mjs` | GraphQL API。カテゴリ / コメントを活用できる |
+| モード | ワークフロー | スクリプト | 特徴 |
+|---|---|---|---|
+| Issues 版 | `build-issues.yml` | `build-from-issues.mjs` | REST API。開発者向け・シンプル |
+| Discussions 版 | `build-discussions.yml` | `build-from-discussions.mjs` | GraphQL API。カテゴリ / コメントを活用できる |
+| **両対応** | `build-both.yml` | `build-from-both.mjs` | Issues + Discussions の両方から記事を集めて1サイトに表示 |
 
 - **開発者中心の技術ブログ** → Issues 版がおすすめ
 - **記事らしい見た目・コメント機能が欲しい** → Discussions 版がおすすめ
+- **両方の入り口から書けるブログにしたい** → 両対応がおすすめ（このリポジトリのデモは両対応で動いています）
 
-Discussions 版で「GitHub でコメントする」リンクを使う場合、`src/consts.ts` の `GITHUB_REPO` を自分のリポジトリ名（`owner/name`）に変更してください。
+> **両対応を使う場合の注意**: 記事の `slug` は Issues / Discussions 間で**重複しない**ようにしてください（重複した場合、後から処理される Discussions 側はスキップされます）。また Discussions を使うにはリポジトリの **Settings > Features** で Discussions を有効化し、投稿用カテゴリを用意する必要があります。
+
+Discussions 版・両対応で「GitHub でコメントする」リンクを使う場合、`src/consts.ts` の `GITHUB_REPO` を自分のリポジトリ名（`owner/name`）に変更してください。
 
 ---
 
@@ -218,7 +224,7 @@ Discussions 版で「GitHub でコメントする」リンクを使う場合、`
 
 ### テーマカラー
 
-`src/layouts/Base.astro` の `:root` にある CSS 変数（`--accent` など）で配色を変更できます。
+`src/layouts/Base.astro` の `:root` にある CSS 変数（`--bg` / `--ink` / `--yellow` / `--blue` など）で配色を変更できます。neo brutalism の枠線・影は `--border` と `--shadow` で調整します。
 
 ### 記事の並び順
 
